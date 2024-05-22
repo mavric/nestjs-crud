@@ -381,6 +381,14 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
       builder.cache(options.query.cache);
     }
 
+    // set group by
+    if (parsed?.groupBy.length > 0) {
+      builder.groupBy(parsed.groupBy[0]);
+      for (let i = 1; i < parsed.groupBy.length; i++) {
+        builder.addGroupBy(parsed.groupBy[i]);
+      }
+    }
+
     return builder;
   }
 

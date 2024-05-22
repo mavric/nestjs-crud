@@ -53,6 +53,7 @@ export class RequestQueryBuilder {
       cache: 'cache',
       includeDeleted: 'include_deleted',
       extra: 'extra.',
+      groupBy: 'groupBy',
     },
   };
   private paramNames: {
