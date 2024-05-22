@@ -312,7 +312,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     // create query builder
     const builder = this.repo.createQueryBuilder(this.alias);
     // get select fields
-    const select = this.getSelect(parsed, options.query);
+    const select = this.getSelect(parsed, options.query, !parsed.groupBy.length);
     // select fields
     builder.select(select);
 
@@ -339,7 +339,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
           const cond = parsed.join.find((j) => j && j.field === allowedJoins[i]) || {
             field: allowedJoins[i],
           };
-          this.setJoin(cond, joinOptions, builder);
+          this.setJoin(cond, joinOptions, builder, !parsed.groupBy.length);
           eagerJoins[allowedJoins[i]] = true;
         }
       }
@@ -348,7 +348,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
         for (let i = 0; i < parsed.join.length; i++) {
           /* istanbul ignore else */
           if (!eagerJoins[parsed.join[i].field]) {
-            this.setJoin(parsed.join[i], joinOptions, builder);
+            this.setJoin(parsed.join[i], joinOptions, builder, !parsed.groupBy.length);
           }
         }
       }
@@ -640,6 +640,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     cond: QueryJoin,
     joinOptions: JoinOptions,
     builder: SelectQueryBuilder<T>,
+    includePrimaryColumns: boolean = true,
   ) {
     const options = joinOptions[cond.field];
 
@@ -682,7 +683,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
 
       const select = [
         ...new Set([
-          ...allowedRelation.primaryColumns,
+          ...(includePrimaryColumns ? allowedRelation.primaryColumns : []),
           ...(isArrayFull(options.persist) ? options.persist : []),
           ...columns,
         ]),
@@ -1012,7 +1013,11 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     }
   }
 
-  protected getSelect(query: ParsedRequestParams, options: QueryOptions): string[] {
+  protected getSelect(
+    query: ParsedRequestParams,
+    options: QueryOptions,
+    includePrimaryColumns: boolean = true,
+  ): string[] {
     const allowed = this.getAllowedColumns(this.entityColumns, options);
 
     const columns =
@@ -1024,7 +1029,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
       ...new Set([
         ...(options.persist && options.persist.length ? options.persist : []),
         ...columns,
-        ...this.entityPrimaryColumns,
+        ...(includePrimaryColumns ? this.entityPrimaryColumns : []),
       ]),
     ].map((col) => `${this.alias}.${col}`);
 
