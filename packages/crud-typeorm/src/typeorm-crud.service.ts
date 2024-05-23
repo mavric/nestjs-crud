@@ -406,23 +406,19 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     builder: SelectQueryBuilder<T>,
     query: ParsedRequestParams,
     options: CrudRequestOptions,
-  ): Promise<any> {
-    if (this.decidePagination(query, options)) {
-      const data = await builder.getRawMany();
-      const limit = builder.expressionMap.take;
-      const offset = builder.expressionMap.skip;
+  ): Promise<GetManyDefaultResponse<T> | T[]> {
+    if (query.groupBy.length > 0) {
+      return builder.getRawMany();
+    } else {
+      if (this.decidePagination(query, options)) {
+        const [data, total] = await builder.getManyAndCount();
+        const limit = builder.expressionMap.take;
+        const offset = builder.expressionMap.skip;
 
-      // return this.createPageInfo(data, total, limit || total, offset || 0);
-      return {
-        data,
-        count: data.length,
-        total: 100,
-        page: limit ? Math.floor(offset / limit) + 1 : 1,
-        pageCount: limit && 100 ? Math.ceil(100 / limit) : 1,
-      };
+        return this.createPageInfo(data, total, limit || total, offset || 0);
+      }
+      return builder.getMany();
     }
-
-    return builder.getMany();
   }
 
   protected onInitMapEntityColumns() {
