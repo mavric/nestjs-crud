@@ -12,6 +12,7 @@ import {
 import {
   ComparisonOperator,
   ParsedRequestParams,
+  QueryFields,
   QueryFilter,
   QueryJoin,
   QuerySort,
@@ -312,7 +313,14 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     // create query builder
     const builder = this.repo.createQueryBuilder(this.alias);
     // get select fields
-    const select = this.getSelect(parsed, options.query, !parsed.groupBy.length);
+    const select = this.getSelectColumns(
+      options.query,
+      parsed.fields,
+      !!parsed.groupBy.length,
+    );
+
+    // const groupByColumns = select.filter((field) => !field.includes('('));
+
     // select fields
     builder.select(select);
 
@@ -339,7 +347,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
           const cond = parsed.join.find((j) => j && j.field === allowedJoins[i]) || {
             field: allowedJoins[i],
           };
-          this.setJoin(cond, joinOptions, builder, !parsed.groupBy.length);
+          this.setJoin(cond, joinOptions, builder, !!parsed.groupBy.length);
           eagerJoins[allowedJoins[i]] = true;
         }
       }
@@ -348,7 +356,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
         for (let i = 0; i < parsed.join.length; i++) {
           /* istanbul ignore else */
           if (!eagerJoins[parsed.join[i].field]) {
-            this.setJoin(parsed.join[i], joinOptions, builder, !parsed.groupBy.length);
+            this.setJoin(parsed.join[i], joinOptions, builder, !!parsed.groupBy.length);
           }
         }
       }
@@ -643,7 +651,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     cond: QueryJoin,
     joinOptions: JoinOptions,
     builder: SelectQueryBuilder<T>,
-    includePrimaryColumns: boolean = true,
+    groupBy: boolean = false,
   ) {
     const options = joinOptions[cond.field];
 
@@ -686,7 +694,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
 
       const select = [
         ...new Set([
-          ...(includePrimaryColumns ? allowedRelation.primaryColumns : []),
+          ...(!groupBy ? allowedRelation.primaryColumns : []),
           ...(isArrayFull(options.persist) ? options.persist : []),
           ...columns,
         ]),
@@ -1016,32 +1024,36 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     }
   }
 
-  protected getSelect(
-    query: ParsedRequestParams,
+  protected getSelectColumns = (
     options: QueryOptions,
+    selectFields: QueryFields,
     groupBy: boolean = false,
-  ): string[] {
-    const allowed = this.getAllowedColumns(this.entityColumns, options);
-    const columnsWithoutAggregate =
-      query.fields && query.fields.length
-        ? query.fields.filter((field) => {
-            if (!field.includes('(')) {
-              return allowed.includes(field);
-            }
-          })
-        : allowed;
+  ): string[] => {
+    const allowedColumns = this.getAllowedColumns(this.entityColumns, options);
+    const isFieldAllowed = (field) => {
+      if (allowedColumns.includes(field)) {
+        return true;
+      }
+      const match = field.match(/\(([^)]+)\)/);
+      return match ? allowedColumns.includes(match[1]) : false;
+    };
+
+    const columns = selectFields.length
+      ? selectFields.filter(isFieldAllowed)
+      : allowedColumns;
 
     const select = [
-      ...(options.persist && options.persist.length ? options.persist : []),
-      ...columnsWithoutAggregate,
-    ];
+      ...new Set([
+        ...(!groupBy && options.persist && options.persist.length > 0
+          ? options.persist
+          : []),
+        ...columns,
+        ...(!groupBy ? this.entityPrimaryColumns : []),
+      ]),
+    ].map((col) => `${this.alias}.${col}`);
 
-    const formattedSelect = select.map((col) =>
-      col.includes('(') ? col : `${this.alias}.${col}`,
-    );
-
-    return Array.from(new Set([...formattedSelect]));
-  }
+    return Array.from(new Set(select));
+  };
 
   protected getSort(query: ParsedRequestParams, options: QueryOptions) {
     return query.sort && query.sort.length
