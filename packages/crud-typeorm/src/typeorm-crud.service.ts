@@ -313,11 +313,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     // create query builder
     const builder = this.repo.createQueryBuilder(this.alias);
     // get select fields
-    const select = this.getSelectColumns(
-      options.query,
-      parsed.fields,
-      !!parsed.groupBy.length,
-    );
+    const select = this.getSelect(parsed, options.query, parsed.groupBy.length > 0);
 
     // const groupByColumns = select.filter((field) => !field.includes('('));
 
@@ -347,7 +343,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
           const cond = parsed.join.find((j) => j && j.field === allowedJoins[i]) || {
             field: allowedJoins[i],
           };
-          this.setJoin(cond, joinOptions, builder, !!parsed.groupBy.length);
+          this.setJoin(cond, joinOptions, builder, parsed.groupBy.length > 0);
           eagerJoins[allowedJoins[i]] = true;
         }
       }
@@ -356,7 +352,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
         for (let i = 0; i < parsed.join.length; i++) {
           /* istanbul ignore else */
           if (!eagerJoins[parsed.join[i].field]) {
-            this.setJoin(parsed.join[i], joinOptions, builder, !!parsed.groupBy.length);
+            this.setJoin(parsed.join[i], joinOptions, builder, parsed.groupBy.length > 0);
           }
         }
       }
@@ -393,7 +389,11 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     if (builder.expressionMap.selects.length > 0) {
       builder.groupBy(builder.expressionMap.selects[0].selection);
       for (let i = 1; i < builder.expressionMap.selects.length; i++) {
-        builder.addGroupBy(builder.expressionMap.selects[i].selection);
+        const selection = builder.expressionMap.selects[i].selection;
+        // Check if its an aggregate
+        if (!selection.includes('(') && !selection.includes(')')) {
+          builder.addGroupBy(selection);
+        }
       }
     }
 
@@ -686,21 +686,14 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     }
 
     if (options.select !== false) {
-      const columns = isArrayFull(cond.select)
-        ? cond.select.filter((column) =>
-            allowedRelation.allowedColumns.some((allowed) => allowed === column),
-          )
-        : allowedRelation.allowedColumns;
-
-      const select = [
-        ...new Set([
-          ...(!groupBy ? allowedRelation.primaryColumns : []),
-          ...(isArrayFull(options.persist) ? options.persist : []),
-          ...columns,
-        ]),
-      ].map((col) => `${alias}.${col}`);
-
-      builder.addSelect(Array.from(new Set(select)));
+      const selectColumns = this.getSelectColumns(
+        allowedRelation.allowedColumns,
+        cond.select,
+        options?.persist,
+        alias,
+        groupBy,
+      );
+      builder.addSelect(selectColumns);
     }
   }
 
@@ -1024,12 +1017,29 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     }
   }
 
-  protected getSelectColumns = (
+  getSelect(
+    query: ParsedRequestParams,
     options: QueryOptions,
+    groupBy: boolean = false,
+  ): string[] {
+    const allowed = this.getAllowedColumns(this.entityColumns, options);
+    const selectColumns = this.getSelectColumns(
+      allowed,
+      query.fields,
+      options?.persist,
+      this.alias,
+      groupBy,
+    );
+    return selectColumns;
+  }
+
+  protected getSelectColumns = (
+    allowedColumns: string[],
     selectFields: QueryFields,
+    persistedColumns: QueryFields = [],
+    alias: string,
     groupBy: boolean = false,
   ): string[] => {
-    const allowedColumns = this.getAllowedColumns(this.entityColumns, options);
     const isFieldAllowed = (field) => {
       if (allowedColumns.includes(field)) {
         return true;
@@ -1044,13 +1054,20 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
 
     const select = [
       ...new Set([
-        ...(!groupBy && options.persist && options.persist.length > 0
-          ? options.persist
-          : []),
+        ...(!groupBy && persistedColumns ? persistedColumns : []),
         ...columns,
         ...(!groupBy ? this.entityPrimaryColumns : []),
       ]),
-    ].map((col) => `${this.alias}.${col}`);
+    ].map((col) => {
+      if (col.includes('(') && col.includes(')')) {
+        const parts = col.split(/[\(\)]+/);
+        const aggregateFunction = parts[0];
+        const columnArgument = parts[1];
+        return `${aggregateFunction}(${alias}.${columnArgument})`;
+      } else {
+        return `${alias}.${col}`;
+      }
+    });
 
     return Array.from(new Set(select));
   };
