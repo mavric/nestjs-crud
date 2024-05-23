@@ -382,10 +382,10 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     }
 
     // set group by
-    if (parsed?.groupBy.length > 0) {
-      builder.groupBy(parsed.groupBy[0]);
-      for (let i = 1; i < parsed.groupBy.length; i++) {
-        builder.addGroupBy(parsed.groupBy[i]);
+    if (builder.expressionMap.selects.length > 0) {
+      builder.groupBy(builder.expressionMap.selects[0].selection);
+      for (let i = 1; i < builder.expressionMap.selects.length; i++) {
+        builder.addGroupBy(builder.expressionMap.selects[i].selection);
       }
     }
 
@@ -1019,24 +1019,28 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
   protected getSelect(
     query: ParsedRequestParams,
     options: QueryOptions,
-    includePrimaryColumns: boolean = true,
+    groupBy: boolean = false,
   ): string[] {
     const allowed = this.getAllowedColumns(this.entityColumns, options);
-
-    const columns =
+    const columnsWithoutAggregate =
       query.fields && query.fields.length
-        ? query.fields.filter((field) => allowed.some((col) => field === col))
+        ? query.fields.filter((field) => {
+            if (!field.includes('(')) {
+              return allowed.includes(field);
+            }
+          })
         : allowed;
 
     const select = [
-      ...new Set([
-        ...(options.persist && options.persist.length ? options.persist : []),
-        ...columns,
-        ...(includePrimaryColumns ? this.entityPrimaryColumns : []),
-      ]),
-    ].map((col) => `${this.alias}.${col}`);
+      ...(options.persist && options.persist.length ? options.persist : []),
+      ...columnsWithoutAggregate,
+    ];
 
-    return Array.from(new Set(select));
+    const formattedSelect = select.map((col) =>
+      col.includes('(') ? col : `${this.alias}.${col}`,
+    );
+
+    return Array.from(new Set([...formattedSelect]));
   }
 
   protected getSort(query: ParsedRequestParams, options: QueryOptions) {
