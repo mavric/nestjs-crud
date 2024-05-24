@@ -61,7 +61,7 @@ export class RequestQueryParser implements ParsedRequestParams {
   public cache: number;
   public includeDeleted: number;
   public extra?: QueryExtra;
-  public groupBy: QueryFields = [];
+  public groupBy: number = 0;
 
   private _params: any;
   private _query: any;
@@ -144,8 +144,10 @@ export class RequestQueryParser implements ParsedRequestParams {
           'includeDeleted',
           this.numericParser.bind(this, 'includeDeleted'),
         )[0];
-        this.groupBy =
-          this.parseQueryParam('groupBy', this.fieldsParser.bind(this))[0] || [];
+        this.groupBy = this.parseQueryParam(
+          'groupBy',
+          this.numericParser.bind(this, 'groupBy'),
+        )[0];
         this.extra = this.parseExtraFromQueryParam();
       }
     }

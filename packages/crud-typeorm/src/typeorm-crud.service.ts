@@ -313,7 +313,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     // create query builder
     const builder = this.repo.createQueryBuilder(this.alias);
     // get select fields
-    const select = this.getSelect(parsed, options.query, parsed.groupBy.length > 0);
+    const select = this.getSelect(parsed, options.query);
 
     // const groupByColumns = select.filter((field) => !field.includes('('));
 
@@ -343,7 +343,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
           const cond = parsed.join.find((j) => j && j.field === allowedJoins[i]) || {
             field: allowedJoins[i],
           };
-          this.setJoin(cond, joinOptions, builder, parsed.groupBy.length > 0);
+          this.setJoin(cond, joinOptions, builder, !!parsed.groupBy);
           eagerJoins[allowedJoins[i]] = true;
         }
       }
@@ -352,7 +352,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
         for (let i = 0; i < parsed.join.length; i++) {
           /* istanbul ignore else */
           if (!eagerJoins[parsed.join[i].field]) {
-            this.setJoin(parsed.join[i], joinOptions, builder, parsed.groupBy.length > 0);
+            this.setJoin(parsed.join[i], joinOptions, builder, !!parsed.groupBy);
           }
         }
       }
@@ -386,7 +386,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     }
 
     // set group by
-    if (builder.expressionMap.selects.length > 0) {
+    if (!!parsed.groupBy && builder.expressionMap.selects.length > 0) {
       builder.groupBy(builder.expressionMap.selects[0].selection);
       for (let i = 1; i < builder.expressionMap.selects.length; i++) {
         const selection = builder.expressionMap.selects[i].selection;
@@ -415,7 +415,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     query: ParsedRequestParams,
     options: CrudRequestOptions,
   ): Promise<GetManyDefaultResponse<T> | T[]> {
-    if (query.groupBy.length > 0) {
+    if (!!query.groupBy) {
       return builder.getRawMany();
     } else {
       if (this.decidePagination(query, options)) {
@@ -1017,18 +1017,14 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     }
   }
 
-  getSelect(
-    query: ParsedRequestParams,
-    options: QueryOptions,
-    groupBy: boolean = false,
-  ): string[] {
+  getSelect(parsed: ParsedRequestParams, options: QueryOptions): string[] {
     const allowed = this.getAllowedColumns(this.entityColumns, options);
     const selectColumns = this.getSelectColumns(
       allowed,
-      query.fields,
+      parsed.fields,
       options?.persist,
       this.alias,
-      groupBy,
+      !!parsed.groupBy,
     );
     return selectColumns;
   }
