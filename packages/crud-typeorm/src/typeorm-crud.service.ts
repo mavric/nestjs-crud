@@ -385,12 +385,16 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
 
     // set group by
     if (!!parsed.groupBy && builder.expressionMap.selects.length > 0) {
-      builder.groupBy(builder.expressionMap.selects[0].selection);
+      let firstSelectionFlag = true;
       for (let i = 1; i < builder.expressionMap.selects.length; i++) {
         const selection = builder.expressionMap.selects[i].selection;
-        // Check if its an aggregate
         if (!selection.includes('(') && !selection.includes(')')) {
-          builder.addGroupBy(selection);
+          if (firstSelectionFlag) {
+            builder.groupBy(selection);
+            firstSelectionFlag = false;
+          } else {
+            builder.addGroupBy(selection);
+          }
         }
       }
     }
