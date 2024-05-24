@@ -386,9 +386,10 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     // set group by
     if (!!parsed.groupBy && builder.expressionMap.selects.length > 0) {
       let firstSelectionFlag = true;
-      for (let i = 1; i < builder.expressionMap.selects.length; i++) {
-        const selection = builder.expressionMap.selects[i].selection;
-        if (!selection.includes('(') && !selection.includes(')')) {
+      const validAggregates = /(AVG|COUNT|MAX|MIN|SUM)\(.*?\)/i;
+      builder.expressionMap.selects.forEach((item) => {
+        const selection = item.selection;
+        if (!validAggregates.test(selection.toUpperCase())) {
           if (firstSelectionFlag) {
             builder.groupBy(selection);
             firstSelectionFlag = false;
@@ -396,7 +397,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
             builder.addGroupBy(selection);
           }
         }
-      }
+      });
     }
 
     return builder;
@@ -1038,12 +1039,14 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     alias: string,
     groupBy: boolean = false,
   ): string[] => {
-    const isFieldAllowed = (field) => {
+    const isFieldAllowed = (field: string) => {
       if (allowedColumns.includes(field)) {
         return true;
       }
       const match = field.match(/\(([^)]+)\)/);
-      return match ? allowedColumns.includes(match[1]) : false;
+      const validAggregates = /(AVG|COUNT|MAX|MIN|SUM)\(.*?\)/i;
+      const isValidAggregate = validAggregates.test(field.toUpperCase());
+      return match ? allowedColumns.includes(match[1]) && isValidAggregate : false;
     };
 
     const columns = selectFields.length
