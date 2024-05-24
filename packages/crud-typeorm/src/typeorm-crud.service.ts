@@ -315,8 +315,6 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     // get select fields
     const select = this.getSelect(parsed, options.query);
 
-    // const groupByColumns = select.filter((field) => !field.includes('('));
-
     // select fields
     builder.select(select);
 
