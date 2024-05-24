@@ -1030,8 +1030,8 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
   }
 
   protected getSelectColumns = (
-    allowedColumns: string[],
-    selectFields: QueryFields,
+    allowedColumns: string[] = [],
+    selectFields: QueryFields = [],
     persistedColumns: QueryFields = [],
     alias: string,
     groupBy: boolean = false,
