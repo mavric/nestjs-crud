@@ -65,6 +65,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     /w*((%27)|(\'))((%6F)|o|(%4F))((%72)|r|(%52))/gi,
     /((%27)|(\'))union/gi,
   ];
+  protected validAggregates = /(AVG|COUNT|MAX|MIN|SUM)\(.*?\)/i;
 
   constructor(protected repo: Repository<T>) {
     super();
@@ -386,10 +387,9 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     // set group by
     if (!!parsed.groupBy && builder.expressionMap.selects.length > 0) {
       let firstSelectionFlag = true;
-      const validAggregates = /(AVG|COUNT|MAX|MIN|SUM)\(.*?\)/i;
       builder.expressionMap.selects.forEach((item) => {
         const selection = item.selection;
-        if (!validAggregates.test(selection.toUpperCase())) {
+        if (!this.validAggregates.test(selection.toUpperCase())) {
           if (firstSelectionFlag) {
             builder.groupBy(selection);
             firstSelectionFlag = false;
@@ -1044,8 +1044,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
         return true;
       }
       const match = field.match(/\(([^)]+)\)/);
-      const validAggregates = /(AVG|COUNT|MAX|MIN|SUM)\(.*?\)/i;
-      const isValidAggregate = validAggregates.test(field.toUpperCase());
+      const isValidAggregate = this.validAggregates.test(field.toUpperCase());
       return match ? allowedColumns.includes(match[1]) && isValidAggregate : false;
     };
 
@@ -1064,7 +1063,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
         const parts = col.split(/[\(\)]+/);
         const aggregateFunction = parts[0];
         const columnArgument = parts[1];
-        return `${aggregateFunction}(${alias}.${columnArgument})`;
+        return `${aggregateFunction}(${alias}.${columnArgument}) AS ${aggregateFunction.toLowerCase()}_${alias.toLowerCase()}_${columnArgument.toLowerCase()}`;
       } else {
         return `${alias}.${col}`;
       }
