@@ -15,14 +15,14 @@
     "composite": true,
     "baseUrl": "./packages",
     "paths": {
-      "@dataui/crud": ["crud/src"],
-      "@dataui/crud-typeorm": ["crud-typeorm/src"],
-      "@dataui/crud-request": ["crud-request/src"],
-      "@dataui/crud-util": ["crud-util/src"],
-      "@dataui/crud/*": ["crud/src/*"],
-      "@dataui/crud-typeorm/*": ["crud-typeorm/src/*"],
-      "@dataui/crud-request/*": ["crud-request/src/*"],
-      "@dataui/crud-util/*": ["crud-util/src/*"]
+      "@mavric/crud": ["crud/src"],
+      "@mavric/crud-typeorm": ["crud-typeorm/src"],
+      "@mavric/crud-request": ["crud-request/src"],
+      "@mavric/crud-util": ["crud-util/src"],
+      "@mavric/crud/*": ["crud/src/*"],
+      "@mavric/crud-typeorm/*": ["crud-typeorm/src/*"],
+      "@mavric/crud-request/*": ["crud-request/src/*"],
+      "@mavric/crud-util/*": ["crud-util/src/*"]
     }
   },
   "references": [

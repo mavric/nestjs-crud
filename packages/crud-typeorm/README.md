@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>CRUD (@dataui/crud-typeorm)</h1>
+  <h1>CRUD (@mavric/crud-typeorm)</h1>
 </div>
 <div align="center">
   <strong>for RESTful APIs built with NestJs</strong>
@@ -17,11 +17,11 @@
   <a href="https://github.com/gid-oss/dataui-nestjs-crud/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/gid-oss/dataui-nestjs-crud.svg" alt="License" />
   </a>
-  <a href="https://www.npmjs.com/package/@dataui/crud">
-    <img src="https://img.shields.io/npm/v/@dataui/crud.svg" alt="npm version" />
+  <a href="https://www.npmjs.com/package/@mavric/crud">
+    <img src="https://img.shields.io/npm/v/@mavric/crud.svg" alt="npm version" />
   </a>
   <a href="https://www.npmjs.com/org/nestjsx">
-    <img src="https://img.shields.io/npm/dm/@dataui/crud.svg" alt="npm downloads" />
+    <img src="https://img.shields.io/npm/dm/@mavric/crud.svg" alt="npm downloads" />
   </a>
   <a href="https://renovatebot.com/">
     <img src="https://img.shields.io/badge/renovate-enabled-brightgreen.svg" alt="Renovate" />
@@ -50,7 +50,7 @@
 
 <br />
 
-We believe that everyone who's working with NestJs and building some RESTful services and especially some CRUD functionality will find `@dataui/crud` microframework very useful.
+We believe that everyone who's working with NestJs and building some RESTful services and especially some CRUD functionality will find `@mavric/crud` microframework very useful.
 
 ## Features
 
@@ -77,14 +77,14 @@ We believe that everyone who's working with NestJs and building some RESTful ser
 ## Install
 
 ```shell
-npm i @dataui/crud-typeorm @nestjs/typeorm typeorm
+npm i @mavric/crud-typeorm @nestjs/typeorm typeorm
 ```
 
 ## Packages
 
-- [**@dataui/crud**](https://www.npmjs.com/package/@dataui/crud) - core package which provides `@Crud()` decorator for endpoints generation, global configuration, validation, helper decorators ([docs](https://gid-oss.github.io/dataui-nestjs-crud/controllers/#description))
-- [**@dataui/crud-request**](https://www.npmjs.com/package/@dataui/crud-request) - request builder/parser package which provides `RequestQueryBuilder` class for a frontend usage and `RequestQueryParser` that is being used internally for handling and validating query/path params on a backend side ([docs](https://gid-oss.github.io/dataui-nestjs-crud/requests/#frontend-usage))
-- [**@dataui/crud-typeorm**](https://www.npmjs.com/package/@dataui/crud-typeorm) - TypeORM package which provides base `TypeOrmCrudService` with methods for CRUD database operations ([docs](https://gid-oss.github.io/dataui-nestjs-crud/service-typeorm/))
+- [**@mavric/crud**](https://www.npmjs.com/package/@mavric/crud) - core package which provides `@Crud()` decorator for endpoints generation, global configuration, validation, helper decorators ([docs](https://gid-oss.github.io/dataui-nestjs-crud/controllers/#description))
+- [**@mavric/crud-request**](https://www.npmjs.com/package/@mavric/crud-request) - request builder/parser package which provides `RequestQueryBuilder` class for a frontend usage and `RequestQueryParser` that is being used internally for handling and validating query/path params on a backend side ([docs](https://gid-oss.github.io/dataui-nestjs-crud/requests/#frontend-usage))
+- [**@mavric/crud-typeorm**](https://www.npmjs.com/package/@mavric/crud-typeorm) - TypeORM package which provides base `TypeOrmCrudService` with methods for CRUD database operations ([docs](https://gid-oss.github.io/dataui-nestjs-crud/service-typeorm/))
 
 ## Documentation
 

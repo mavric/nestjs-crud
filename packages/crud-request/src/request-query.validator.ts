@@ -8,7 +8,7 @@ import {
   isStringFull,
   isUndefined,
   objKeys,
-} from '@dataui/crud-util';
+} from '@mavric/crud-util';
 
 import { RequestQueryException } from './exceptions';
 import { CustomOperators, ParamOption, ParamsOptions } from './interfaces';

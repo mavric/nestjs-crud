@@ -1,5 +1,5 @@
 {
-  "name": "@dataui/crud",
+  "name": "@mavric/crud",
   "version": "0.0.1",
   "description": "Nest CRUD for RESTful APIs",
   "license": "MIT",

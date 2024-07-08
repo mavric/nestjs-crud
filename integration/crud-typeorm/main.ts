@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { CrudConfigService } from '@dataui/crud';
+import { CrudConfigService } from '@mavric/crud';
 import { USER_REQUEST_KEY } from './constants';
 
 // Important: load config before (!!!) you import AppModule
@@ -23,8 +23,8 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   const options = new DocumentBuilder()
-    .setTitle('@dataui/crud-typeorm')
-    .setDescription('@dataui/crud-typeorm')
+    .setTitle('@mavric/crud-typeorm')
+    .setDescription('@mavric/crud-typeorm')
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, options);

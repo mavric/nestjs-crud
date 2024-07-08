@@ -1,4 +1,4 @@
-import { ParsedRequestParams } from '@dataui/crud-request';
+import { ParsedRequestParams } from '@mavric/crud-request';
 
 import { CrudRequestOptions } from '../interfaces';
 
