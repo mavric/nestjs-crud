@@ -6,6 +6,7 @@
   "workspaces": [
     "packages/*"
   ],
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mavric/nestjs-crud.git"
