@@ -316,6 +316,16 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     // get select fields
     const select = this.getSelect(parsed, options.query);
 
+    // Validate aggregates without groupBy
+    const hasAggregate = select.some((field) =>
+      this.validAggregates.test(field.toUpperCase()),
+    );
+    if (parsed.groupBy === 0 && hasAggregate) {
+      console.warn(
+        'You have aggregate function in the select but groupBy is set to 0. Did you mean to use groupBy = 1?',
+      );
+    }
+
     // select fields
     builder.select(select);
 

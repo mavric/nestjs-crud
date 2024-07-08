@@ -109,7 +109,7 @@ export function validateSort(sort: QuerySort): void {
 
 export function validateNumeric(
   val: number,
-  num: 'limit' | 'offset' | 'page' | 'cache' | 'include_deleted' | string,
+  num: 'limit' | 'offset' | 'page' | 'cache' | 'include_deleted' | 'group_by' | string,
 ): void {
   if (!isNumber(val)) {
     throw new RequestQueryException(`Invalid ${num}. Number expected`);
