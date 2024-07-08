@@ -31,6 +31,6 @@ jobs:
 
       - run: yarn clean
       - run: yarn build
-      - run: yarn publish
+      - run: yarn pub
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
