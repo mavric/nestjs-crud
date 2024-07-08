@@ -7,6 +7,13 @@
     "packages/*"
   ],
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mavric/nestjs-crud.git"
+  },
+  "publishConfig": {
+    "@mavric:registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "s": "npx nps",
     "s:list": "yarn s --scripts",
@@ -110,9 +117,5 @@
   "author": {
     "name": "Michael Yali",
     "email": "mihon4ik@gmail.com"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/gid-oss/dataui-nestjs-crud"
   }
 }
