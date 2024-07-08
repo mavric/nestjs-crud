@@ -19,7 +19,7 @@ jobs:
           scope: '@mavric'
 
       - name: Install dependencies
-        run: npm install
+        run: yarn install
 
       - name: Bump version and tag
         id: bump_version
@@ -29,7 +29,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: npm ci
-      - run: npm publish
+      - run: yarn clean
+      - run: yarn build
+      - run: yarn publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
