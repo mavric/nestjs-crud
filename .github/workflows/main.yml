@@ -1,5 +1,4 @@
 name: version, tag and publish package
-
 on:
   push:
     branches: [master]
