@@ -12,6 +12,7 @@ import {
 import {
   ComparisonOperator,
   ParsedRequestParams,
+  QueryFields,
   QueryFilter,
   QueryJoin,
   QuerySort,
@@ -65,6 +66,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     /w*((%27)|(\'))((%6F)|o|(%4F))((%72)|r|(%52))/gi,
     /((%27)|(\'))union/gi,
   ];
+  protected validAggregates = /(AVG|COUNT|MAX|MIN|SUM)\(.*?\)/i;
 
   constructor(protected repo: Repository<T>) {
     super();
@@ -314,6 +316,17 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     const builder = this.repo.createQueryBuilder(this.alias);
     // get select fields
     const select = this.getSelect(parsed, options.query);
+
+    // Validate aggregates without groupBy
+    const hasAggregate = select.some((field) =>
+      this.validAggregates.test(field.toUpperCase()),
+    );
+    if (parsed.groupBy === 0 && hasAggregate) {
+      console.warn(
+        'You have aggregate function in the select but groupBy is set to 0. Did you mean to use groupBy = 1?',
+      );
+    }
+
     // select fields
     builder.select(select);
 
@@ -340,7 +353,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
           const cond = parsed.join.find((j) => j && j.field === allowedJoins[i]) || {
             field: allowedJoins[i],
           };
-          this.setJoin(cond, joinOptions, builder);
+          this.setJoin(cond, joinOptions, builder, !!parsed.groupBy);
           eagerJoins[allowedJoins[i]] = true;
         }
       }
@@ -349,7 +362,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
         for (let i = 0; i < parsed.join.length; i++) {
           /* istanbul ignore else */
           if (!eagerJoins[parsed.join[i].field]) {
-            this.setJoin(parsed.join[i], joinOptions, builder);
+            this.setJoin(parsed.join[i], joinOptions, builder, !!parsed.groupBy);
           }
         }
       }
@@ -382,6 +395,22 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
       builder.cache(options.query.cache);
     }
 
+    // set group by
+    if (!!parsed.groupBy && builder.expressionMap.selects.length > 0) {
+      let firstSelectionFlag = true;
+      builder.expressionMap.selects.forEach((item) => {
+        const selection = item.selection;
+        if (!this.validAggregates.test(selection.toUpperCase())) {
+          if (firstSelectionFlag) {
+            builder.groupBy(selection);
+            firstSelectionFlag = false;
+          } else {
+            builder.addGroupBy(selection);
+          }
+        }
+      });
+    }
+
     return builder;
   }
 
@@ -400,15 +429,18 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     query: ParsedRequestParams,
     options: CrudRequestOptions,
   ): Promise<GetManyDefaultResponse<T> | T[]> {
-    if (this.decidePagination(query, options)) {
-      const [data, total] = await builder.getManyAndCount();
-      const limit = builder.expressionMap.take;
-      const offset = builder.expressionMap.skip;
+    if (!!query.groupBy) {
+      return builder.getRawMany();
+    } else {
+      if (this.decidePagination(query, options)) {
+        const [data, total] = await builder.getManyAndCount();
+        const limit = builder.expressionMap.take;
+        const offset = builder.expressionMap.skip;
 
-      return this.createPageInfo(data, total, limit || total, offset || 0);
+        return this.createPageInfo(data, total, limit || total, offset || 0);
+      }
+      return builder.getMany();
     }
-
-    return builder.getMany();
   }
 
   protected onInitMapEntityColumns() {
@@ -633,6 +665,7 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     cond: QueryJoin,
     joinOptions: JoinOptions,
     builder: SelectQueryBuilder<T>,
+    groupBy: boolean = false,
   ) {
     const options = joinOptions[cond.field];
 
@@ -667,21 +700,14 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     }
 
     if (options.select !== false) {
-      const columns = isArrayFull(cond.select)
-        ? cond.select.filter((column) =>
-            allowedRelation.allowedColumns.some((allowed) => allowed === column),
-          )
-        : allowedRelation.allowedColumns;
-
-      const select = [
-        ...new Set([
-          ...allowedRelation.primaryColumns,
-          ...(isArrayFull(options.persist) ? options.persist : []),
-          ...columns,
-        ]),
-      ].map((col) => `${alias}.${col}`);
-
-      builder.addSelect(Array.from(new Set(select)));
+      const selectColumns = this.getSelectColumns(
+        allowedRelation.allowedColumns,
+        cond.select,
+        options?.persist,
+        alias,
+        groupBy,
+      );
+      builder.addSelect(selectColumns);
     }
   }
 
@@ -1005,24 +1031,57 @@ export class TypeOrmCrudService<T> extends CrudService<T, DeepPartial<T>> {
     }
   }
 
-  protected getSelect(query: ParsedRequestParams, options: QueryOptions): string[] {
+  getSelect(parsed: ParsedRequestParams, options: QueryOptions): string[] {
     const allowed = this.getAllowedColumns(this.entityColumns, options);
+    const selectColumns = this.getSelectColumns(
+      allowed,
+      parsed.fields,
+      options?.persist,
+      this.alias,
+      !!parsed.groupBy,
+    );
+    return selectColumns;
+  }
 
-    const columns =
-      query.fields && query.fields.length
-        ? query.fields.filter((field) => allowed.some((col) => field === col))
-        : allowed;
+  protected getSelectColumns = (
+    allowedColumns: string[] = [],
+    selectFields: QueryFields = [],
+    persistedColumns: QueryFields = [],
+    alias: string,
+    groupBy: boolean = false,
+  ): string[] => {
+    const isFieldAllowed = (field: string) => {
+      if (allowedColumns.includes(field)) {
+        return true;
+      }
+      const match = field.match(/\(([^)]+)\)/);
+      const isValidAggregate = this.validAggregates.test(field.toUpperCase());
+      return match ? allowedColumns.includes(match[1]) && isValidAggregate : false;
+    };
+
+    const columns = selectFields.length
+      ? selectFields.filter(isFieldAllowed)
+      : allowedColumns;
 
     const select = [
       ...new Set([
-        ...(options.persist && options.persist.length ? options.persist : []),
+        ...(!groupBy && persistedColumns ? persistedColumns : []),
         ...columns,
-        ...this.entityPrimaryColumns,
+        ...(!groupBy ? this.entityPrimaryColumns : []),
       ]),
-    ].map((col) => `${this.alias}.${col}`);
+    ].map((col) => {
+      if (col.includes('(') && col.includes(')')) {
+        const parts = col.split(/[\(\)]+/);
+        const aggregateFunction = parts[0];
+        const columnArgument = parts[1];
+        return `${aggregateFunction}(${alias}.${columnArgument}) AS ${aggregateFunction.toLowerCase()}_${alias.toLowerCase()}_${columnArgument.toLowerCase()}`;
+      } else {
+        return `${alias}.${col}`;
+      }
+    });
 
     return Array.from(new Set(select));
-  }
+  };
 
   protected getSort(query: ParsedRequestParams, options: QueryOptions) {
     return query.sort && query.sort.length

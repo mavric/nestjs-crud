@@ -53,6 +53,7 @@ export class RequestQueryBuilder {
       cache: 'cache',
       includeDeleted: 'include_deleted',
       extra: 'extra.',
+      groupBy: 'groupBy',
     },
   };
   private paramNames: {
@@ -195,6 +196,11 @@ export class RequestQueryBuilder {
     return this;
   }
 
+  setGroupBy(n: number): this {
+    this.setNumeric(n, 'groupBy');
+    return this;
+  }
+
   cond(
     f: QueryFilter | QueryFilterArr,
     cond: 'filter' | 'or' | 'search' = 'search',
@@ -295,7 +301,7 @@ export class RequestQueryBuilder {
 
   private setNumeric(
     n: number,
-    cond: 'limit' | 'offset' | 'page' | 'cache' | 'includeDeleted',
+    cond: 'limit' | 'offset' | 'page' | 'cache' | 'includeDeleted' | 'groupBy',
   ): void {
     if (!isNil(n)) {
       validateNumeric(n, cond);

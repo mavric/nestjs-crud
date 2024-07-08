@@ -23,4 +23,5 @@ export interface CreateQueryParams {
   resetCache?: boolean;
   includeDeleted?: number;
   extra?: QueryExtra;
+  groupBy?: number;
 }

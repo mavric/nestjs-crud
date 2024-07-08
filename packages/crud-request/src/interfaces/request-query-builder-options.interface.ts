@@ -14,5 +14,6 @@ export interface RequestQueryBuilderOptions {
     cache?: string | string[];
     includeDeleted?: string | string[];
     extra?: string | string[];
+    groupBy?: string | string[];
   };
 }

@@ -17,6 +17,7 @@ export interface ParsedRequestParams<EXTRA = {}> {
   page: number;
   cache: number;
   includeDeleted: number;
+  groupBy?: number;
   /**
    * Extra options.
    *
