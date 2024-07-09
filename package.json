@@ -30,7 +30,8 @@
     "format": "npx pretty-quick --pattern \"packages/**/!(*.d).ts\"",
     "lint": "npx tslint 'packages/**/*.ts'",
     "cm": "npx git-cz",
-    "pub": "npx lerna publish --force-publish"
+    "pub": "npx lerna publish --force-publish",
+    "mavric:publish-all": "node publish.js"
   },
   "config": {
     "commitizen": {
