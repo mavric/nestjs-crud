@@ -20,7 +20,7 @@ jobs:
         scope: '@mavric'
       
     - name: Install dependencies
-      run: npm install
+      run: npm install --legacy-peer-deps
 
     - name: Bump version and tag
       id: bump_version
@@ -30,7 +30,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - run: npm ci
     - run: npm run mavric:publish-all
       env:
         NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
