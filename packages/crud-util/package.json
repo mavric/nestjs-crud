@@ -1,20 +1,20 @@
 {
-  "name": "@dataui/crud-util",
+  "name": "@mavric/crud-util",
   "description": "NestJs CRUD for RESTful APIs - util",
   "version": "5.3.4",
   "license": "MIT",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com/"
   },
   "files": [
     "lib"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/gid-oss/dataui-nestjs-crud"
+    "url": "https://github.com/mavric/nestjs-crud"
   },
   "bugs": {
     "url": "https://github.com/gid-oss/dataui-nestjs-crud/issues"
